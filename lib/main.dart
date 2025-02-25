@@ -1,103 +1,196 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:math';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'GPS Speed Tracker',
+      title: 'Bicycle Computer',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const SpeedTracker(),
+      home: BicycleComputerScreen(),
     );
   }
 }
 
-class SpeedTracker extends StatefulWidget {
-  const SpeedTracker({super.key});
-
+class BicycleComputerScreen extends StatefulWidget {
   @override
-  _SpeedTrackerState createState() => _SpeedTrackerState();
+  _BicycleComputerScreenState createState() => _BicycleComputerScreenState();
 }
 
-class _SpeedTrackerState extends State<SpeedTracker> {
-  String _speed = '0.0';
-  late Position _currentPosition;
+class _BicycleComputerScreenState extends State<BicycleComputerScreen> {
+  double _speed = 0.0;
+  double _distance = 0.0;
+  double _heading = 0.0;
+  String _direction = 'N';
+  DateTime _currentTime = DateTime.now();
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
+    _initCompass();
+    _initLocation();
+    _initNotifications();
+    _updateTime();
   }
 
-  Future<void> _getCurrentLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  double convertHeading(double heading) {
+    return (heading > 180) ? heading - 360 : heading;
+  }
 
-    // Check if location services are enabled
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are not enabled, request them
-      return;
-    }
-
-    // Check location permission
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission != LocationPermission.whileInUse && permission != LocationPermission.always) {
-        return;
-      }
-    }
-
-    // Get the current location with desired accuracy
-    LocationSettings locationSettings = const LocationSettings(
-      accuracy: LocationAccuracy.high, // Set the desired accuracy
-      distanceFilter: 10, // Minimum distance (in meters) between location updates
-    );
-
-    // Start listening to location updates
-    Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {
+  void _initCompass() {
+    FlutterCompass.events?.listen((CompassEvent event) {
       setState(() {
-        _currentPosition = position;
-        double speedInMetersPerSecond = _currentPosition.speed;
-        double speedInKilometersPerHour = speedInMetersPerSecond * 3.6; // Convert m/s to km/h
-        _speed = speedInKilometersPerHour.toStringAsFixed(2); // Speed in km/h
+        _heading = convertHeading(event.heading ?? 0.0);
+        _direction = _getDirection(_heading);
       });
     });
+  }
+
+  void _initLocation() {
+    Geolocator.getPositionStream().listen((Position position) {
+      setState(() {
+        _speed = position.speed;
+        _distance += position.speed * (1 / 3600); // Update distance in km
+      });
+    });
+  }
+
+  void _initNotifications() {
+    var initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+    var initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
+    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  void _updateTime() {
+    setState(() {
+      _currentTime = DateTime.now();
+    });
+    Future.delayed(Duration(seconds: 1), _updateTime);
+  }
+
+  void _setAlarm() async {
+    var androidPlatformChannelSpecifics = const AndroidNotificationDetails(
+      'alarm_channel',
+      'Alarm Channel',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+    var platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      'Alarm',
+      'Time to take a break!',
+      platformChannelSpecifics,
+    );
+  }
+
+  String _getDirection(double heading) {
+    double normalizedHeading = (heading < 0) ? heading + 360 : heading;
+
+    if (normalizedHeading >= 337.5 || normalizedHeading < 22.5) {
+      return 'N';
+    } else if (normalizedHeading >= 22.5 && normalizedHeading < 67.5) {
+      return 'NE';
+    } else if (normalizedHeading >= 67.5 && normalizedHeading < 112.5) {
+      return 'E';
+    } else if (normalizedHeading >= 112.5 && normalizedHeading < 157.5) {
+      return 'SE';
+    } else if (normalizedHeading >= 157.5 && normalizedHeading < 202.5) {
+      return 'S';
+    } else if (normalizedHeading >= 202.5 && normalizedHeading < 247.5) {
+      return 'SW';
+    } else if (normalizedHeading >= 247.5 && normalizedHeading < 292.5) {
+      return 'W';
+    } else if (normalizedHeading >= 292.5 && normalizedHeading < 337.5) {
+      return 'NW';
+    } else {
+      return 'N';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('GPS Speed Tracker'),
+        title: Text('Bicycle Computer'),
       ),
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Text(
-                'Current Speed:',
-                style: TextStyle(fontSize: 24),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                '$_speed km/h', // Display speed in km/h
-                style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
-              ),
-            ],
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Compass UI with Rotating Circle
+                Container(
+                  width: 200,
+                  height: 200,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Rotating Compass Background
+                      Transform.rotate(
+                        angle: _heading * (pi / -180), // Convert degrees to radians
+                        child: Image.asset(
+                          'assets/compass.png', // Add a compass image with N, NE, E, etc.
+                          width: 200,
+                          height: 200,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+
+                      // Static Arrow (Fixed)
+                      Icon(
+                        Icons.navigation,
+                        size: 60,
+                        color: Colors.red,
+                      ),
+
+                      // Center Dot
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20),
+                // Speedometer
+                Text('Speed: ${_speed.toStringAsFixed(2)} km/h', style: TextStyle(fontSize: 24)),
+                SizedBox(height: 20),
+                // ODO Meter
+                Text('Distance: ${_distance.toStringAsFixed(2)} km', style: TextStyle(fontSize: 24)),
+                SizedBox(height: 20),
+                // Compass Heading and Direction
+                Text('Compass: ${_heading.toStringAsFixed(2)}°', style: TextStyle(fontSize: 24)),
+                SizedBox(height: 10),
+                Text('Direction: $_direction', style: TextStyle(fontSize: 24)),
+                SizedBox(height: 20),
+                // Current Time
+                Text('Time: ${_currentTime.hour}:${_currentTime.minute}:${_currentTime.second}', style: TextStyle(fontSize: 24)),
+                SizedBox(height: 20),
+                // Alarm Button
+                ElevatedButton(
+                  onPressed: _setAlarm,
+                  child: Text('Set Alarm'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
