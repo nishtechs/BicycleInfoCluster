@@ -1,0 +1,1 @@
+D:\Development\Android Projects\Practice\speed_from_gps\build\app\intermediates\cxx\Debug\3i4c5g5p\obj\arm64-v8a

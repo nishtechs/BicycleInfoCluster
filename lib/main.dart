@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:math';
+
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(MyApp());
@@ -11,18 +14,48 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Bicycle Computer',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: BicycleComputerScreen(),
+    return ScreenUtilInit(
+      designSize: const Size(360, 690),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      // Use builder only if you need to use library outside ScreenUtilInit context
+      builder: (_, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          // You can use the library anywhere in the app even in theme
+          theme: ThemeData(
+            primarySwatch: Colors.deepPurple,
+            textTheme: Typography.englishLike2018.apply(fontSizeFactor: 1.sp),
+          ),
+          home: child,
+        );
+      },
+      child: const BicycleComputerScreen(),
     );
+
+/*    return ScreenUtilInit(
+        designSize: const Size(360, 690),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        // Use builder only if you need to use library outside ScreenUtilInit context
+        builder: (_, child) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Bicycle Computer',
+            theme: ThemeData(
+              primarySwatch: Colors.blue,
+            ),
+            home: BicycleComputerScreen(),
+          );
+        },
+      child
+        );*/
   }
 }
 
 class BicycleComputerScreen extends StatefulWidget {
+  const BicycleComputerScreen({super.key});
+
   @override
   _BicycleComputerScreenState createState() => _BicycleComputerScreenState();
 }
@@ -31,9 +64,9 @@ class _BicycleComputerScreenState extends State<BicycleComputerScreen> {
   double _speed = 0.0;
   double _distance = 0.0;
   double _heading = 0.0;
-  String _direction = 'N';
+  String _direction = '';
   DateTime _currentTime = DateTime.now();
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  // FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   @override
   void initState() {
@@ -67,20 +100,20 @@ class _BicycleComputerScreenState extends State<BicycleComputerScreen> {
   }
 
   void _initNotifications() {
-    var initializationSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+/*    var initializationSettingsAndroid = const AndroidInitializationSettings('@mipmap/ic_launcher');
     var initializationSettings = InitializationSettings(android: initializationSettingsAndroid);
-    flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    flutterLocalNotificationsPlugin.initialize(initializationSettings);*/
   }
 
   void _updateTime() {
     setState(() {
       _currentTime = DateTime.now();
     });
-    Future.delayed(Duration(seconds: 1), _updateTime);
+    Future.delayed(const Duration(seconds: 1), _updateTime);
   }
 
   void _setAlarm() async {
-    var androidPlatformChannelSpecifics = const AndroidNotificationDetails(
+  /*  var androidPlatformChannelSpecifics = const AndroidNotificationDetails(
       'alarm_channel',
       'Alarm Channel',
       importance: Importance.max,
@@ -92,7 +125,7 @@ class _BicycleComputerScreenState extends State<BicycleComputerScreen> {
       'Alarm',
       'Time to take a break!',
       platformChannelSpecifics,
-    );
+    );*/
   }
 
   String _getDirection(double heading) {
@@ -122,46 +155,67 @@ class _BicycleComputerScreenState extends State<BicycleComputerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('Bicycle Computer'),
+        centerTitle: true,
+        title: Text(
+          'Bikxter',
+          style: GoogleFonts.poppins(fontSize: 25.sp, fontWeight: FontWeight.w600, fontFeatures: [FontFeature.alternativeFractions()], color: Colors.black),
+        ),
       ),
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(16.w),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Text('${_currentTime.hour}:${_currentTime.minute}', style: GoogleFonts.poppins(fontSize: 30.sp, fontWeight: FontWeight.w600, color: Colors.lightGreenAccent)),
+                SizedBox(
+                  height: 5.h,
+                ),
                 // Compass UI with Rotating Circle
-                Container(
-                  width: 200,
-                  height: 200,
+                SizedBox(
+                  width: 250.w,
+                  height: 250.h,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
                       // Rotating Compass Background
+
+                      Transform.rotate(
+                        angle: _heading * (pi / 180), // Convert degrees to radians
+                        child: Image.asset(
+                          'assets/compass.png', // Add a compass image with N, NE, E, etc.
+                          width: 220.w,
+                          height: 220.h,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+
+
                       Transform.rotate(
                         angle: _heading * (pi / -180), // Convert degrees to radians
                         child: Image.asset(
                           'assets/compass.png', // Add a compass image with N, NE, E, etc.
-                          width: 200,
-                          height: 200,
-                          fit: BoxFit.cover,
+                          width: 180.w,
+                          height: 180.h,
+                          fit: BoxFit.contain,
                         ),
                       ),
 
                       // Static Arrow (Fixed)
                       Icon(
                         Icons.navigation,
-                        size: 60,
+                        size: 80.h,
                         color: Colors.red,
                       ),
 
                       // Center Dot
                       Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
+                        width: 5.w,
+                        height: 5.w,
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           color: Colors.black,
                         ),
@@ -169,25 +223,24 @@ class _BicycleComputerScreenState extends State<BicycleComputerScreen> {
                     ],
                   ),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 20.h),
                 // Speedometer
-                Text('Speed: ${_speed.toStringAsFixed(2)} km/h', style: TextStyle(fontSize: 24)),
-                SizedBox(height: 20),
+                Text('Speed: ${_speed.toStringAsFixed(2)} km/h', style: GoogleFonts.poppins(fontSize: 24.sp, color: Colors.black)),
+                SizedBox(height: 5.h),
                 // ODO Meter
-                Text('Distance: ${_distance.toStringAsFixed(2)} km', style: TextStyle(fontSize: 24)),
-                SizedBox(height: 20),
+                Text('Distance: ${_distance.toStringAsFixed(2)} km', style: GoogleFonts.poppins(fontSize: 24.sp, color: Colors.black)),
+                SizedBox(height: 5.h),
                 // Compass Heading and Direction
-                Text('Compass: ${_heading.toStringAsFixed(2)}°', style: TextStyle(fontSize: 24)),
-                SizedBox(height: 10),
-                Text('Direction: $_direction', style: TextStyle(fontSize: 24)),
-                SizedBox(height: 20),
+                Text('Compass: ${_heading.toStringAsFixed(2)}°', style: GoogleFonts.poppins(fontSize: 24.sp, color: Colors.black)),
+                SizedBox(height: 5.h),
+                Text('Direction: $_direction', style: GoogleFonts.poppins(fontSize: 24.sp, color: Colors.black)),
+                SizedBox(height: 5.h),
                 // Current Time
-                Text('Time: ${_currentTime.hour}:${_currentTime.minute}:${_currentTime.second}', style: TextStyle(fontSize: 24)),
-                SizedBox(height: 20),
+                SizedBox(height: 5.h),
                 // Alarm Button
                 ElevatedButton(
                   onPressed: _setAlarm,
-                  child: Text('Set Alarm'),
+                  child: const Text('Set Alarm'),
                 ),
               ],
             ),
