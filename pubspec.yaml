@@ -37,11 +37,13 @@ dependencies:
   cupertino_icons: ^1.0.8
   geolocator: ^13.0.2
   flutter_compass: ^0.8.1
-#  flutter_local_notifications: ^18.0.1
+  #  flutter_local_notifications: ^18.0.1
   flutter_bloc: ^9.0.0
   wakelock_plus: ^1.2.10
   flutter_screenutil: ^5.9.3
   google_fonts: ^6.2.1
+  deepseek_api: ^0.1.2
+  flutter_scalable_ocr: ^2.2.1
 
 dev_dependencies:
   flutter_test:
