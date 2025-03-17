@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'deepseek.dart';
+import 'ocr.dart';
 
 void main() {
   runApp(MyApp());
@@ -143,7 +144,8 @@ class _BicycleComputerScreenState extends State<BicycleComputerScreen> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    navigateToDeepseek();
+                    // navigateToDeepseek();
+                    navigateToOCR();
                   },
                   child: Card(
                     child: Text(
@@ -233,5 +235,10 @@ class _BicycleComputerScreenState extends State<BicycleComputerScreen> {
 
   navigateToDeepseek() {
     Navigator.of(context).push(MaterialPageRoute(builder: (context) => Deepseek()));
+  }
+
+
+  navigateToOCR(){
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => OCR(title: 'OCR',)));
   }
 }
