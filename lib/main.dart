@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math';
@@ -8,7 +9,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'deepseek.dart';
 import 'ocr.dart';
 
-void main() {
+void main() async {
+  await dotenv.load(fileName: "lib/.env");
   runApp(MyApp());
 }
 
@@ -47,7 +49,12 @@ class _BicycleComputerScreenState extends State<BicycleComputerScreen> {
   double _heading = 0.0;
   String _direction = '';
   DateTime _currentTime = DateTime.now();
-  Position? _previousPosition; // Store the previous position for distance calculation
+  Position? _previousPosition;
+
+  String openApiKey = dotenv.env['OPEN_AI_KEYS'] ?? '1111';
+  String deepseekApiKey = dotenv.env['DEEPSEEK_AI_KEYS'] ?? '2222';
+  String baseUrl = dotenv.env['BASE_URL'] ?? '3333';
+  String appName = dotenv.env['APP_NAME'] ?? '4444';
 
   @override
   void initState() {
@@ -129,10 +136,11 @@ class _BicycleComputerScreenState extends State<BicycleComputerScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.orange,
         centerTitle: true,
         title: Text(
-          'Bikxter',
-          style: GoogleFonts.poppins(fontSize: 25.sp, fontWeight: FontWeight.w600, fontFeatures: [const FontFeature.alternativeFractions()], color: Colors.black),
+          appName,
+          style: GoogleFonts.poppins(fontSize: 25.sp, fontWeight: FontWeight.w600, fontFeatures: [const FontFeature.alternativeFractions()], color: Colors.black87),
         ),
       ),
       body: Center(
